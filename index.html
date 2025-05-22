@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Scheduling Simulator ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0e7ff; 
+            background-image: linear-gradient(to bottom right, #e0e7ff, #c7d2fe, #a5b4fc);
+            min-height: 100vh;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            padding: 1rem; 
+        }
+        .container {
+            max-width: 750px; 
+            margin: 2rem auto;
+            padding: 2rem 2.5rem; 
+            background-color: rgba(255, 255, 255, 0.97); 
+            backdrop-filter: blur(12px);
+            border-radius: 20px; 
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18), 0 5px 15px rgba(0,0,0,0.12); 
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .main-title {
+            font-family: 'Poppins', sans-serif;
+            color: #3730a3; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 2rem; 
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr; 
+            gap: 1.25rem; 
+            margin-bottom: 1.5rem; 
+        }
+        @media (min-width: 640px) { 
+            .controls-grid {
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 1.75rem;
+            }
+        }
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 600; 
+            color: #4338ca; 
+            font-size: 0.9rem;
+        }
+        input[type="text"], input[type="number"], input[type="password"], select {
+            width: 100%;
+            padding: 0.85rem 1rem; 
+            border: 1px solid #c7d2fe; 
+            border-radius: 10px; 
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background-color: #f0f4f8; 
+            color: #374151; 
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus, select:focus {
+            outline: none;
+            border-color: #6366f1; 
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); 
+            background-color: #fff;
+        }
+        select {
+            appearance: none; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236366f1'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25em 1.25em;
+            padding-right: 2.5rem; 
+        }
+        .button-group { 
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .gemini-button {
+            background-image: linear-gradient(to right, #8b5cf6, #a78bfa) !important; 
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3) !important;
+        }
+        .gemini-button:hover {
+            background-image: linear-gradient(to right, #7c3aed, #8b5cf6) !important;
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4) !important;
+        }
+
+        button { 
+            padding: 1.5rem 1.5rem;
+            background-image: linear-gradient(to right, #6366f1, #818cf8); 
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            width: 20%;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        button:hover {
+            background-image: linear-gradient(to right, #4f46e5, #6366f1); 
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+        }
+        button:disabled {
+            background-image: linear-gradient(to right, #9ca3af, #b2b8c2);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .results-container, .gemini-output-container {
+            margin-top: 2rem; 
+            padding: 1.75rem; 
+            background-color: #f8fafc; 
+            border-radius: 12px;
+            border: 1px solid #e2e8f0; 
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .results-container h3, .gemini-output-container h4 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.35rem; 
+            font-weight: 600;
+            color: #4f46e5; 
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid #c7d2fe; 
+            padding-bottom: 0.5rem;
+        }
+        .gemini-output-container h4 {
+            color: #7c3aed; 
+             border-bottom: 2px solid #ddd6fe;
+        }
+        .results-container p, .gemini-output-container p {
+            margin-bottom: 0.75rem;
+            color: #334155; 
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .results-container strong, .gemini-output-container strong {
+            color: #1e293b; 
+            font-weight: 600;
+        }
+        .results-container #resultSeekSequence {
+            font-weight: 500;
+            color: #5b21b6; 
+            word-break: break-all;
+            background-color: #ede9fe; 
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            display: inline-block; 
+            margin-top: 0.25rem;
+        }
+         .results-container #resultTotalMovement {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #166534; 
+        }
+        .error-message, .loading-message, .api-error-display { 
+            color: #dc2626; 
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.3rem;
+            background-color: #fee2e2; 
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block; 
+            width: 100%; 
+            text-align: center; 
+            margin-bottom: 1rem; 
+        }
+        .loading-message {
+            color: #1d4ed8; 
+            background-color: #dbeafe; 
+        }
+        /* #directionGroup display is now controlled by JS */
+        .gemini-explanation { 
+            white-space: pre-wrap; 
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border: 1px dashed #d1d5db;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container">
+        <h1 class="main-title text-3xl sm:text-4xl font-bold text-center">Disk Scheduling Simulator ✨</h1>
+
+        <div id="apiErrorDisplay" class="api-error-display" style="display:none;"></div>
+
+
+        <div class="controls-grid">
+            <div>
+                <label for="requestQueueInput">Request Queue (comma-separated):</label>
+                <input type="text" id="requestQueueInput" placeholder="e.g., 98, 183, 37, 122" value="98, 183, 37, 122, 14, 124, 65, 67">
+                <p id="queueError" class="error-message" style="display:none;"></p>
+            </div>
+            <div>
+                <label for="initialHeadInput">Initial Head Position:</label>
+                <input type="number" id="initialHeadInput" placeholder="e.g., 53" value="53" min="0">
+                 <p id="headError" class="error-message" style="display:none;"></p>
+            </div>
+            <div>
+                <label for="maxTrackInput">Max Cylinder/Track:</label>
+                <input type="number" id="maxTrackInput" placeholder="e.g., 199" value="199" min="1">
+                <p id="maxTrackError" class="error-message" style="display:none;"></p>
+            </div>
+            <div>
+                <label for="algorithmSelect">Algorithm:</label>
+                <select id="algorithmSelect">
+                    <option value="fcfs">FCFS (First Come First Serve)</option>
+                    <option value="sstf">SSTF (Shortest Seek Time First)</option>
+                    <option value="scan">SCAN (Elevator)</option>
+                    <option value="cscan">C-SCAN (Circular SCAN)</option>
+                    <option value="look">LOOK</option>
+                </select>
+            </div>
+            <div id="directionGroup" class="col-span-1 sm:col-span-2" style="display: none;">
+                <label for="directionSelect">Initial Head Direction:</label>
+                <select id="directionSelect">
+                    <option value="right">Right (Towards Higher Tracks)</option>
+                    <option value="left">Left (Towards Lower Tracks)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button id="calculateMovementButton">Calculate Movement</button>
+            </div>
+        
+        <div id="geminiLoading" class="loading-message" style="display: none; margin-bottom: 1rem; text-align: center; width:100%;">Communicating with Gemini ✨... Please wait.</div>
+
+        <div id="resultsDiv" class="results-container" style="display: none;">
+            <h3 id="resultAlgorithm"></h3>
+            <p><strong>Initial Head:</strong> <span id="resultInitialHead"></span></p>
+            <p><strong>Request Queue:</strong> <span id="resultRequestQueue"></span></p>
+            <p><strong>Max Track:</strong> <span id="resultMaxTrack"></span></p>
+            <p id="resultDirectionP" style="display: none;"><strong>Selected Direction:</strong> <span id="resultDirection"></span></p>
+            <p><strong>Seek Sequence:</strong> <br><span id="resultSeekSequence"></span></p>
+            <p><strong>Total Head Movement:</strong> <span id="resultTotalMovement"></span></p>
+            <button id="explainResultsButton" class="gemini-button" style="margin-top: 1rem; width:auto; padding: 0.5rem 1rem; font-size:0.8rem;">Explain These Results ✨</button>
+        </div>
+
+        <div id="geminiExplanationOutput" class="gemini-output-container" style="display:none;">
+            <h4>✨ Results Explanation by Gemini</h4>
+            <div class="gemini-explanation" id="geminiExplanationText"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const apiErrorDisplay = document.getElementById('apiErrorDisplay'); 
+        const requestQueueInput = document.getElementById('requestQueueInput');
+        const initialHeadInput = document.getElementById('initialHeadInput');
+        const maxTrackInput = document.getElementById('maxTrackInput');
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const directionSelect = document.getElementById('directionSelect');
+        const directionGroup = document.getElementById('directionGroup');
+        const calculateMovementButton = document.getElementById('calculateMovementButton');
+        const explainResultsButton = document.getElementById('explainResultsButton');
+        
+        const resultsDiv = document.getElementById('resultsDiv');
+        const resultAlgorithm = document.getElementById('resultAlgorithm');
+        const resultInitialHead = document.getElementById('resultInitialHead');
+        const resultRequestQueue = document.getElementById('resultRequestQueue');
+        const resultMaxTrack = document.getElementById('resultMaxTrack');
+        const resultDirectionP = document.getElementById('resultDirectionP');
+        const resultDirection = document.getElementById('resultDirection');
+        const resultSeekSequence = document.getElementById('resultSeekSequence');
+        const resultTotalMovement = document.getElementById('resultTotalMovement');
+        
+        const queueError = document.getElementById('queueError');
+        const headError = document.getElementById('headError');
+        const maxTrackError = document.getElementById('maxTrackError');
+
+        const geminiLoading = document.getElementById('geminiLoading');
+        const geminiExplanationOutput = document.getElementById('geminiExplanationOutput');
+        const geminiExplanationText = document.getElementById('geminiExplanationText');
+
+        let currentResultsForExplanation = {}; 
+
+        function showError(element, message) {
+            element.textContent = message;
+            element.style.display = 'inline-block';
+        }
+
+        function clearError(element) {
+            element.textContent = '';
+            element.style.display = 'none';
+        }
+
+        function ensureUniqueSequence(sequence) {
+            let finalUniqueSequence = [];
+            let seenInFinal = new Set();
+            for(const track of sequence){
+                if(!seenInFinal.has(track)){
+                    finalUniqueSequence.push(track);
+                    seenInFinal.add(track);
+                }
+            }
+            return finalUniqueSequence;
+        }
+
+        // --- Input Validation ---
+        function validateInputs(queueStr, headStr, maxTrackStr) {
+            let isValid = true;
+            clearError(queueError); clearError(headError); clearError(maxTrackError);
+
+            const requests = queueStr.split(',').map(s => s.trim()).filter(s => s !== '').map(Number);
+            if (requests.some(isNaN)) {
+                showError(queueError, 'Queue must contain only numbers.'); isValid = false;
+            }
+            const head = parseInt(headStr);
+            if (isNaN(head) || head < 0) {
+                showError(headError, 'Initial head must be a non-negative number.'); isValid = false;
+            }
+            const maxTrackVal = parseInt(maxTrackStr);
+            if (isNaN(maxTrackVal) || maxTrackVal <= 0) {
+                showError(maxTrackError, 'Max track must be a positive number.'); isValid = false;
+            }
+            if (!isNaN(head) && !isNaN(maxTrackVal) && head > maxTrackVal) {
+                showError(headError, 'Initial head cannot be greater than max track.'); isValid = false;
+            }
+            if (requests.some(r => r < 0 || r > maxTrackVal)) {
+                showError(queueError, `Requests must be between 0 and ${maxTrackVal}.`); isValid = false;
+            }
+            return isValid ? { requests, head, maxTrack: maxTrackVal } : null;
+        }
+
+        // --- Algorithm Implementations ---
+        function fcfs(queue, head, direction) { // Direction is passed but not used by FCFS logic
+            let seq = [head]; let mov = 0; let cur = head;
+            queue.forEach(r => { seq.push(r); mov += Math.abs(r - cur); cur = r; });
+            return { seekSequence: ensureUniqueSequence(seq), totalMovement: mov };
+        }
+
+        function sstf(queue, head, direction) { // Direction is passed but not used by SSTF logic
+            let seq = [head]; let mov = 0; let cur = head; let rem = [...queue];
+            while (rem.length > 0) {
+                let shortest = Infinity; let nextIdx = -1;
+                for (let i = 0; i < rem.length; i++) {
+                    const s = Math.abs(rem[i] - cur);
+                    if (s < shortest) { shortest = s; nextIdx = i; }
+                }
+                const nextReq = rem.splice(nextIdx, 1)[0];
+                seq.push(nextReq); mov += shortest; cur = nextReq;
+            }
+            return { seekSequence: ensureUniqueSequence(seq), totalMovement: mov };
+        }
+
+        function scan(queue, head, maxTrack, direction) {
+            let seekSequence = [head];
+            let currentHead = head;
+            let localSortedQueue = [...new Set(queue)]; 
+            let processedRequests = new Set();
+
+            if (direction === 'right') {
+                localSortedQueue.filter(r => r >= currentHead).sort((a, b) => a - b).forEach(req => {
+                    if (!seekSequence.includes(req)) seekSequence.push(req);
+                    processedRequests.add(req);
+                });
+                currentHead = seekSequence[seekSequence.length - 1];
+
+                if (currentHead < maxTrack || seekSequence.length === 1) { 
+                     if (!seekSequence.includes(maxTrack)) seekSequence.push(maxTrack);
+                }
+                currentHead = maxTrack;
+
+                localSortedQueue.filter(r => !processedRequests.has(r) && r < currentHead) 
+                              .sort((a, b) => b - a) 
+                              .forEach(req => {
+                                  if (!seekSequence.includes(req)) seekSequence.push(req);
+                              });
+            } else { // direction === 'left'
+                localSortedQueue.filter(r => r <= currentHead).sort((a, b) => b - a).forEach(req => {
+                    if (!seekSequence.includes(req)) seekSequence.push(req);
+                    processedRequests.add(req);
+                });
+                currentHead = seekSequence[seekSequence.length - 1];
+
+                if (currentHead > 0 || seekSequence.length === 1) { 
+                    if (!seekSequence.includes(0)) seekSequence.push(0);
+                }
+                currentHead = 0;
+
+                localSortedQueue.filter(r => !processedRequests.has(r) && r > currentHead)
+                              .sort((a, b) => a - b) 
+                              .forEach(req => {
+                                   if (!seekSequence.includes(req)) seekSequence.push(req);
+                               });
+            }
+            
+            seekSequence = ensureUniqueSequence(seekSequence);
+            let totalMovement = 0;
+            for (let i = 1; i < seekSequence.length; i++) {
+                totalMovement += Math.abs(seekSequence[i] - seekSequence[i - 1]);
+            }
+            return { seekSequence, totalMovement };
+        }
+
+        function cscan(queue, head, maxTrack, direction) {
+            let seekSequence = [head];
+            let currentHead = head;
+            let localSortedQueue = [...new Set(queue)]; 
+            let processedRequests = new Set();
+
+            if (direction === 'right') {
+                localSortedQueue.filter(r => r >= currentHead).sort((a,b)=>a-b).forEach(req => {
+                    if (!seekSequence.includes(req)) seekSequence.push(req);
+                    processedRequests.add(req);
+                });
+                currentHead = seekSequence[seekSequence.length - 1];
+
+                if (currentHead < maxTrack || seekSequence.length === 1) {
+                     if (!seekSequence.includes(maxTrack)) seekSequence.push(maxTrack);
+                }
+                currentHead = maxTrack;
+                
+                if (localSortedQueue.some(r => !processedRequests.has(r) && r < head)) { 
+                    if (!seekSequence.includes(0)) seekSequence.push(0);
+                    currentHead = 0;
+                    localSortedQueue.filter(r => !processedRequests.has(r) && r >= currentHead && r < head) 
+                                  .sort((a,b)=>a-b)
+                                  .forEach(req => {
+                                      if (!seekSequence.includes(req)) seekSequence.push(req);
+                                  });
+                }
+            } else { // direction === 'left'
+                localSortedQueue.filter(r => r <= currentHead).sort((a,b)=>b-a).forEach(req => {
+                     if (!seekSequence.includes(req)) seekSequence.push(req);
+                     processedRequests.add(req);
+                });
+                currentHead = seekSequence[seekSequence.length - 1];
+
+                if (currentHead > 0 || seekSequence.length === 1) {
+                    if (!seekSequence.includes(0)) seekSequence.push(0);
+                }
+                currentHead = 0;
+
+                if (localSortedQueue.some(r => !processedRequests.has(r) && r > head)) { 
+                    if (!seekSequence.includes(maxTrack)) seekSequence.push(maxTrack);
+                    currentHead = maxTrack;
+                    localSortedQueue.filter(r => !processedRequests.has(r) && r <= currentHead && r > head) 
+                                  .sort((a,b)=>b-a) 
+                                  .forEach(req => {
+                                      if (!seekSequence.includes(req)) seekSequence.push(req);
+                                  });
+                }
+            }
+            
+            seekSequence = ensureUniqueSequence(seekSequence);
+            let totalMovement = 0;
+            for (let i = 1; i < seekSequence.length; i++) {
+                totalMovement += Math.abs(seekSequence[i] - seekSequence[i - 1]);
+            }
+            return { seekSequence, totalMovement };
+        }
+
+        function look(queue, head, maxTrack, direction) {
+            let seekSequence = [head];
+            let currentHead = head;
+            let localSortedQueue = [...new Set(queue)];
+            let processedRequests = new Set();
+
+            if (localSortedQueue.length === 0) return { seekSequence: ensureUniqueSequence(seekSequence), totalMovement: 0 };
+
+            if (direction === 'right') {
+                let rightwardRequests = localSortedQueue.filter(r => r >= currentHead).sort((a,b)=>a-b);
+                rightwardRequests.forEach(req => {
+                    if (!seekSequence.includes(req)) seekSequence.push(req);
+                    processedRequests.add(req);
+                });
+                if (rightwardRequests.length > 0) currentHead = rightwardRequests[rightwardRequests.length -1];
+                else currentHead = head;
+
+
+                localSortedQueue.filter(r => !processedRequests.has(r)) 
+                              .sort((a,b)=>b-a) 
+                              .forEach(req => {
+                                  if (!seekSequence.includes(req)) seekSequence.push(req);
+                              });
+            } else { // direction === 'left'
+                let leftwardRequests = localSortedQueue.filter(r => r <= currentHead).sort((a,b)=>b-a);
+                leftwardRequests.forEach(req => {
+                    if (!seekSequence.includes(req)) seekSequence.push(req);
+                    processedRequests.add(req);
+                });
+
+                if (leftwardRequests.length > 0) currentHead = leftwardRequests[leftwardRequests.length - 1];
+                else currentHead = head;
+
+                localSortedQueue.filter(r => !processedRequests.has(r)) 
+                              .sort((a,b)=>a-b) 
+                              .forEach(req => {
+                                  if (!seekSequence.includes(req)) seekSequence.push(req);
+                              });
+            }
+            
+            seekSequence = ensureUniqueSequence(seekSequence);
+            let totalMovement = 0;
+            for (let i = 1; i < seekSequence.length; i++) {
+                totalMovement += Math.abs(seekSequence[i] - seekSequence[i - 1]);
+            }
+            return { seekSequence, totalMovement };
+        }
+
+        // --- Gemini API Call Function ---
+        async function callGeminiAPI(prompt, schema = null) {
+            clearError(apiErrorDisplay); 
+            
+            const hardcodedUserApiKey = "AIzaSyApUtLZNGD0593RFCo2s5qlf-_i27U6A-0"; 
+
+            if (!hardcodedUserApiKey) { 
+                showError(apiErrorDisplay, "API Key is missing in the code. Please contact the developer.");
+                return "Error: API Key is missing in the code.";
+            }
+
+            geminiLoading.style.display = 'inline-block';
+            explainResultsButton.disabled = true;
+            calculateMovementButton.disabled = true;
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            if (schema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                };
+            }
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${hardcodedUserApiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Gemini API Error Details:", errorData);
+                    let errorMessage = `API request failed with status ${response.status}.`;
+                    if (errorData.error && errorData.error.message) {
+                        errorMessage += ` Message: ${errorData.error.message}`;
+                    }
+                     if (response.status === 403) {
+                        errorMessage += " This might be due to an invalid or incorrectly configured API key, or billing not enabled for your project.";
+                    }
+                    showError(apiErrorDisplay, errorMessage); 
+                    throw new Error(errorMessage);
+                }
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    return schema ? JSON.parse(text) : text;
+                } else {
+                    console.error("Unexpected Gemini API response structure:", result);
+                    showError(apiErrorDisplay, "Received an unexpected response structure from Gemini API.");
+                    throw new Error("Failed to get a valid response from Gemini API.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                if (apiErrorDisplay.style.display === 'none') { 
+                    showError(apiErrorDisplay, `Error: ${error.message}`);
+                }
+                return `Error: ${error.message}`; 
+            } finally {
+                geminiLoading.style.display = 'none';
+                explainResultsButton.disabled = false;
+                calculateMovementButton.disabled = false;
+            }
+        }
+
+        // --- Event Listeners ---
+        function toggleDirectionInput() {
+            const selectedAlgorithm = algorithmSelect.value;
+            if (selectedAlgorithm === 'fcfs' || selectedAlgorithm === 'sstf') {
+                directionGroup.style.display = 'none';
+                resultDirectionP.style.display = 'none'; // Also hide in results
+            } else {
+                directionGroup.style.display = 'block';
+                 // Adjust column span for responsive layout if direction is visible
+                if (window.innerWidth >= 640) { // sm breakpoint
+                     directionGroup.classList.remove('sm:col-span-1'); 
+                     directionGroup.classList.add('sm:col-span-2');
+                } else {
+                     directionGroup.classList.remove('sm:col-span-2');
+                     directionGroup.classList.add('sm:col-span-1');
+                }
+                resultDirectionP.style.display = 'block'; // Show in results
+            }
+        }
+        
+        algorithmSelect.addEventListener('change', toggleDirectionInput);
+        window.addEventListener('resize', () => {
+            // Only adjust span if direction group is supposed to be visible
+            if (directionGroup.style.display === 'block') {
+                if (window.innerWidth >= 640) { 
+                     directionGroup.classList.remove('sm:col-span-1'); 
+                     directionGroup.classList.add('sm:col-span-2');
+                } else {
+                     directionGroup.classList.remove('sm:col-span-2');
+                     directionGroup.classList.add('sm:col-span-1');
+                }
+            }
+        });
+        toggleDirectionInput(); // Initial call to set visibility
+
+
+        calculateMovementButton.addEventListener('click', () => {
+            clearError(apiErrorDisplay); 
+            const validationResult = validateInputs(requestQueueInput.value, initialHeadInput.value, maxTrackInput.value);
+            if (!validationResult) {
+                resultsDiv.style.display = 'none';
+                geminiExplanationOutput.style.display = 'none'; 
+                return;
+            }
+
+            const { requests: parsedQueue, head: initialHead, maxTrack: maxTrackVal } = validationResult;
+            const algorithm = algorithmSelect.value;
+            const direction = directionSelect.value; // Always read, but only used by some algos
+            let result;
+
+            switch (algorithm) {
+                case 'fcfs': result = fcfs(parsedQueue, initialHead, direction); break;
+                case 'sstf': result = sstf(parsedQueue, initialHead, direction); break;
+                case 'scan': result = scan(parsedQueue, initialHead, maxTrackVal, direction); break;
+                case 'cscan': result = cscan(parsedQueue, initialHead, maxTrackVal, direction); break;
+                case 'look': result = look(parsedQueue, initialHead, maxTrackVal, direction); break;
+                default: console.error("Unknown algorithm"); return;
+            }
+
+            resultsDiv.style.display = 'block';
+            resultAlgorithm.textContent = `${algorithmSelect.options[algorithmSelect.selectedIndex].text}`;
+            resultInitialHead.textContent = initialHead;
+            resultRequestQueue.textContent = parsedQueue.length > 0 ? parsedQueue.join(', ') : 'N/A (Empty Queue)';
+            resultMaxTrack.textContent = maxTrackVal;
+            
+            // Conditionally display direction in results
+            if (algorithm === 'fcfs' || algorithm === 'sstf') {
+                resultDirectionP.style.display = 'none';
+            } else {
+                resultDirectionP.style.display = 'block';
+                resultDirection.textContent = direction === 'right' ? 'Right (Towards Higher Tracks)' : 'Left (Towards Lower Tracks)';
+            }
+            
+            resultSeekSequence.textContent = result.seekSequence.join(' → ');
+            resultTotalMovement.textContent = result.totalMovement;
+            
+            currentResultsForExplanation = { 
+                queue: parsedQueue.join(', '),
+                head: initialHead,
+                maxTrack: maxTrackVal,
+                algorithm: algorithmSelect.options[algorithmSelect.selectedIndex].text,
+                // Only include direction in explanation prompt if relevant
+                direction: (algorithm !== 'fcfs' && algorithm !== 'sstf') ? (direction === 'right' ? 'Right' : 'Left') : 'N/A',
+                sequence: result.seekSequence.join(' → '),
+                movement: result.totalMovement
+            };
+            geminiExplanationOutput.style.display = 'none'; 
+        });
+
+        explainResultsButton.addEventListener('click', async () => {
+            clearError(apiErrorDisplay);
+            if (!currentResultsForExplanation.algorithm) {
+                geminiExplanationText.textContent = "Please calculate results first.";
+                geminiExplanationOutput.style.display = 'block';
+                return;
+            }
+            let promptDirectionPart = "";
+            if (currentResultsForExplanation.direction !== 'N/A') {
+                promptDirectionPart = `Selected Initial Direction: ${currentResultsForExplanation.direction}`;
+            }
+
+            const prompt = `
+                Explain the disk scheduling results for the following scenario:
+                Algorithm: ${currentResultsForExplanation.algorithm}
+                Request Queue: ${currentResultsForExplanation.queue || "empty"}
+                Initial Head Position: ${currentResultsForExplanation.head}
+                Maximum Track: ${currentResultsForExplanation.maxTrack}
+                ${promptDirectionPart}
+                ---
+                Resulting Seek Sequence: ${currentResultsForExplanation.sequence}
+                Resulting Total Head Movement: ${currentResultsForExplanation.movement}
+                ---
+                In simple terms, why did the ${currentResultsForExplanation.algorithm} algorithm produce this specific seek sequence and total head movement for this input? 
+                What are the key characteristics of this algorithm that led to this outcome?
+                Keep the explanation concise and easy to understand for a student learning about these concepts.
+            `;
+            const explanation = await callGeminiAPI(prompt);
+            if (typeof explanation === 'string' && explanation.startsWith("Error:")) {
+                geminiExplanationText.textContent = "Could not fetch explanation. " + explanation;
+            } else if (typeof explanation === 'string') {
+                geminiExplanationText.textContent = explanation;
+            } else {
+                 geminiExplanationText.textContent = "Received an unexpected data type from Gemini explanation.";
+            }
+            geminiExplanationOutput.style.display = 'block';
+        });
+        
+        // Initial setup
+        toggleDirectionInput(); // Set initial visibility of direction input
+        calculateMovementButton.click(); // Perform initial calculation
+
+    </script>
+</body>
+</html>
